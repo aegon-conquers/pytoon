@@ -1,0 +1,65 @@
+import pymysql
+import getpass
+
+def update_table(connection, new_value, condition):
+    try:
+        with connection.cursor() as cursor:
+            # Start a transaction
+            connection.begin()
+
+            # SQL statement to perform the update
+            update_sql = "UPDATE your_table SET column_to_update = %s WHERE condition_column = %s"
+
+            # Execute the update query
+            cursor.execute(update_sql, (new_value, condition))
+
+            # Commit the transaction
+            connection.commit()
+
+            print("Update successful!")
+
+    except Exception as e:
+        # Rollback the transaction in case of failure
+        connection.rollback()
+        print("Update failed:", e)
+
+def select_and_print(connection):
+    try:
+        with connection.cursor() as cursor:
+            # SQL statement to select data
+            select_sql = "SELECT * FROM your_table"
+
+            # Execute the select query
+            cursor.execute(select_sql)
+
+            # Fetch all rows
+            rows = cursor.fetchall()
+
+            # Print the selected data
+            print("Selected data:")
+            for row in rows:
+                print(row)
+
+    except Exception as e:
+        print("Selection failed:", e)
+
+if __name__ == "__main__":
+    host = "your_host"
+    database = "your_database"
+    table = "your_table"
+
+    # Get username and password securely
+    username = input("Enter your username: ")
+    password = getpass.getpass("Enter your password: ")
+
+    # Connect to the database
+    connection = pymysql.connect(host=host, user=username, password=password, database=database)
+
+    new_value = "new_value"
+    condition = "condition_value"
+
+    update_table(connection, new_value, condition)
+    select_and_print(connection)
+
+    # Close the connection
+    connection.close()
