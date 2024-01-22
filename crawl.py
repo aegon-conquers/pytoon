@@ -1,48 +1,37 @@
 import os
-import fnmatch
 
 base_directory = "/usr/temp/8456"
 
-def process_files(directory):
-    for root, dirs, files in os.walk(directory):
-        # Filter directories that start with the pattern "2024011"
-        dirs[:] = [d for d in dirs if d.startswith("2024011")]
+# Iterate over directories that start with "2024011"
+for root, dirs, files in os.walk(base_directory):
+    dirs[:] = [d for d in dirs if d.startswith("2024011")]
 
-        for dir_name in dirs:
-            data_directory = os.path.join(root, dir_name, "data")
+    # For every directory found, go into /data directory
+    for directory in dirs:
+        data_path = os.path.join(root, directory, "data")
 
-            # If "data" directory exists, proceed to the next step
-            if os.path.exists(data_directory):
-                load_directories = [d for d in os.listdir(data_directory) if d.startswith("load_")]
+        # Check if the /data directory exists
+        if os.path.exists(data_path):
+            # Iterate over directories inside /data
+            for subdir in os.listdir(data_path):
+                subdir_path = os.path.join(data_path, subdir)
 
-                for load_dir in load_directories:
-                    load_path = os.path.join(data_directory, load_dir)
+                # Check if it's a directory
+                if os.path.isdir(subdir_path):
+                    # Look for files matching the pattern ap_load_*.dat
+                    for filename in os.listdir(subdir_path):
+                        if filename.startswith("ap_load_") and filename.endswith(".dat"):
+                            # Full path to the file
+                            file_path = os.path.join(subdir_path, filename)
 
-                    # Process files in every "load_*" directory
-                    process_load_directory(load_path)
+                            # Read the first two lines of the file
+                            with open(file_path, 'r') as file:
+                                lines = file.readlines()
+                                if len(lines) >= 2:
+                                    # Count occurrences of empty strings between "\t"
+                                    second_line_values = lines[1].split("\t")
+                                    empty_string_count = second_line_values.count('')
 
-def process_load_directory(load_directory):
-    load_files = [f for f in os.listdir(load_directory) if fnmatch.fnmatch(f, "ap_load_*.dat")]
-    for file in load_files:
-        file_path = os.path.join(load_directory, file)
-        key = get_key_from_file(file_path)
-        print(f"Key: {key}, Filename: {file}")
-
-def get_key_from_file(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            # Read the first two lines
-            lines = file.readlines()[:2]
-
-            # Split the second line by "\t" and get the value at Index 3
-            if len(lines) >= 2:
-                second_line_values = lines[1].strip().split("\t")
-                if len(second_line_values) >= 4:
-                    key = second_line_values[3]
-                    return key
-    except Exception as e:
-        print(f"Error processing file {file_path}: {e}")
-    return None
-
-if __name__ == "__main__":
-    process_files(base_directory)
+                                    # Print key and filename
+                                    key = second_line_values[3] if len(second_line_values) > 3 else None
+                                    print(f"Key: {key}, Filename: {file_path}, Empty String Count: {empty_string_count}")
