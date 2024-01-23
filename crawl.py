@@ -1,4 +1,18 @@
-import os
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+# Create a Spark session
+spark = SparkSession.builder.appName("DirectoryScan").getOrCreate()
+
+# Define the schema for the DataFrame
+schema = StructType([
+    StructField("Key", StringType(), True),
+    StructField("Filename", StringType(), True),
+    StructField("EmptyStringCount", IntegerType(), True)
+])
+
+# Initialize an empty DataFrame
+df = spark.createDataFrame([], schema=schema)
 
 base_directory = "/usr/temp/8456"
 
@@ -32,6 +46,17 @@ for root, dirs, files in os.walk(base_directory):
                                     second_line_values = lines[1].split("\t")
                                     empty_string_count = second_line_values.count('')
 
-                                    # Print key and filename
+                                    # Append data to the DataFrame
                                     key = second_line_values[3] if len(second_line_values) > 3 else None
-                                    print(f"Key: {key}, Filename: {file_path}, Empty String Count: {empty_string_count}")
+                                    df = df.union(
+                                        spark.createDataFrame([(key, file_path, empty_string_count)], schema=schema)
+                                    )
+
+# Show the resulting DataFrame
+df.show()
+
+# Write the DataFrame to a Hive table
+df.write.mode("overwrite").saveAsTable("your_hive_table_name")
+
+# Stop the Spark session
+spark.stop()
