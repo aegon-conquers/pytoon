@@ -1,5 +1,7 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql.functions import date_format
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType
+from datetime import datetime
 
 # Create a Spark session
 spark = SparkSession.builder.appName("DirectoryScan").getOrCreate()
@@ -8,7 +10,8 @@ spark = SparkSession.builder.appName("DirectoryScan").getOrCreate()
 schema = StructType([
     StructField("Key", StringType(), True),
     StructField("Filename", StringType(), True),
-    StructField("EmptyStringCount", IntegerType(), True)
+    StructField("EmptyStringCount", IntegerType(), True),
+    StructField("Timestamp", StringType(), True)
 ])
 
 # Initialize an empty DataFrame
@@ -38,6 +41,10 @@ for root, dirs, files in os.walk(base_directory):
                             # Full path to the file
                             file_path = os.path.join(subdir_path, filename)
 
+                            # Get the timestamp of the file and format it
+                            timestamp = datetime.fromtimestamp(os.path.getctime(file_path))
+                            formatted_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
                             # Read the first two lines of the file
                             with open(file_path, 'r') as file:
                                 lines = file.readlines()
@@ -49,7 +56,8 @@ for root, dirs, files in os.walk(base_directory):
                                     # Append data to the DataFrame
                                     key = second_line_values[3] if len(second_line_values) > 3 else None
                                     df = df.union(
-                                        spark.createDataFrame([(key, file_path, empty_string_count)], schema=schema)
+                                        spark.createDataFrame([(key, file_path, empty_string_count, formatted_timestamp)],
+                                                             schema=schema)
                                     )
 
 # Show the resulting DataFrame
