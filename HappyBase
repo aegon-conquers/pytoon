@@ -1,0 +1,28 @@
+import happybase
+
+# Connect to HBase
+connection = happybase.Connection('localhost')  # Change 'localhost' to your HBase host
+connection.open()
+
+# Choose a table
+table_name = 'example_table'
+table = connection.table(table_name)
+
+# Define some sample data
+row_key = b'row1'
+data = {
+    b'family:qualifier1': b'value1',
+    b'family:qualifier2': b'value2'
+}
+
+# Write data to HBase
+table.put(row_key, data)
+
+# Read data from HBase
+row = table.row(row_key)
+print(f"Row Key: {row_key.decode()}")
+for column, value in row.items():
+    print(f"{column.decode()}: {value.decode()}")
+
+# Close the connection
+connection.close()
