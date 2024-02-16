@@ -26,3 +26,8 @@ for column, value in row.items():
 
 # Close the connection
 connection.close()
+
+
+df = df.join(age_groups, "Age", "left") \
+       .withColumn("Conflict", expr(
+           "CASE WHEN array_contains(Names, Name) THEN 'No Conflict' ELSE concat('Conflict with ', concat_ws(', ', filter(Names, x -> x != Name))) END"))
