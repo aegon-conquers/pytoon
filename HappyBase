@@ -31,3 +31,18 @@ connection.close()
 df = df.join(age_groups, "Age", "left") \
        .withColumn("Conflict", expr(
            "CASE WHEN array_contains(Names, Name) THEN 'No Conflict' ELSE concat('Conflict with ', concat_ws(', ', filter(Names, x -> x != Name))) END"))
+
+# Define UDF to determine conflicts
+def find_conflicts(age, name, names):
+    if name in names:
+        return "No Conflict"
+    else:
+        other_names = [n for n in names if n != name]
+        return f"Conflict with {', '.join(other_names)}"
+
+find_conflicts_udf = udf(find_conflicts, StringType())
+
+# Update Conflict column using the UDF
+df = df.withColumn("Conflict", find_conflicts_udf("Age", "Name", age_groups["Names"]))
+
+df.show(truncate=False)
