@@ -1,0 +1,62 @@
+WITH RECURSIVE reporting_hierarchy AS (
+    -- Base case: Select the initial user_id and its direct manager
+    SELECT user_id AS reportee_id, mgr_id AS manager_id
+    FROM your_table
+    WHERE user_id IS NOT NULL
+    UNION ALL
+    -- Recursive case: Join with the reporting_hierarchy CTE to find the next level of hierarchy
+    SELECT t.user_id AS reportee_id, rh.manager_id
+    FROM your_table t
+    JOIN reporting_hierarchy rh ON t.mgr_id = rh.reportee_id
+)
+-- Select the final reporting hierarchy
+SELECT * FROM reporting_hierarchy;
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# Initialize SparkSession
+spark = SparkSession.builder \
+    .appName("Build Reporting Hierarchy") \
+    .getOrCreate()
+
+# Sample DataFrame with user_id and mgr_id
+data = [
+    (100, 200),
+    (101, 200),
+    (102, 200),
+    (200, 300),
+    (201, 300),
+    (202, 300),
+    (103, 300),
+    (104, 300),
+    (300, 400),
+    (203, 400),
+    (400, 500),
+    (401, 500),
+    (500, 500)
+]
+
+columns = ['user_id', 'mgr_id']
+df = spark.createDataFrame(data, columns)
+
+# Initialize reporting hierarchy DataFrame with base level (user_id and its direct manager)
+reporting_hierarchy = df.withColumnRenamed('user_id', 'reportee_id').withColumnRenamed('mgr_id', 'manager_id')
+
+# Join the DataFrame with itself iteratively to build the hierarchy
+while True:
+    # Join with the DataFrame itself to find the next level of reporting hierarchy
+    next_level = df.join(reporting_hierarchy, df['mgr_id'] == reporting_hierarchy['reportee_id'], 'inner') \
+                   .select(df['user_id'].alias('reportee_id'), reporting_hierarchy['manager_id']) \
+                   .distinct()
+
+    # Check if there are any new entries to add to the reporting hierarchy
+    if next_level.count() == 0:
+        break
+
+    # Add the new entries to the reporting hierarchy
+    reporting_hierarchy = reporting_hierarchy.union(next_level)
+
+# Show the final reporting hierarchy
+reporting_hierarchy.show()
