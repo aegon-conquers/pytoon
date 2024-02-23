@@ -1,0 +1,23 @@
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+public class YourServiceClass {
+
+    public String callAnotherApi() {
+        // Create a RestTemplate instance
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Configure a proxy for the RestTemplate
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxy_host", proxy_port));
+        requestFactory.setProxy(proxy);
+        restTemplate.setRequestFactory(requestFactory);
+
+        // Make a GET request to the target API
+        String apiUrl = "https://api.example.com/endpoint";
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity(apiUrl, String.class);
+
+        // Return the response body
+        return responseEntity.getBody();
+    }
+}
