@@ -1,9 +1,6 @@
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
 
 public class PostRequestExample {
 
@@ -18,31 +15,33 @@ public class PostRequestExample {
         String proxyHost = "your_proxy_host";
         int proxyPort = 8080; // Change this to your proxy port
 
-        // Create HttpClient with proxy settings
-        HttpClient httpClient = HttpClient.create()
-                .proxy(proxy -> proxy.type(Proxy.HTTP)
-                        .host(proxyHost)
-                        .port(proxyPort));
-
-        // Configure ExchangeStrategies with HttpClient
-        ExchangeStrategies strategies = ExchangeStrategies.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // Example codec configuration
-                .build();
-
-        // Create WebClient with custom HttpClient and ExchangeStrategies
+        // Create WebClient with proxy settings
         WebClient client = WebClient.builder()
-                .exchangeStrategies(strategies)
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .baseUrl(apiUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
+                        .proxy(proxy -> proxy.type(Proxy.HTTP)
+                                .host(proxyHost)
+                                .port(proxyPort))))
                 .build();
 
         // Make a POST request with JSON content type and the request body
-        String responseBody = client.post()
-                                  .uri(apiUrl)
-                                  .header(HttpHeaders.CONTENT_TYPE, "application/json")
-                                  .body(BodyInserters.fromValue(requestBody))
-                                  .retrieve()
-                                  .bodyToMono(String.class)
-                                  .block();
+        String responseBody;
+        try {
+            responseBody = client.post()
+                    .uri(apiUrl)
+                    .body(BodyInserters.fromValue(requestBody))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            // Handle exceptions
+            e.printStackTrace();
+            return;
+        } finally {
+            // Close the WebClient instance
+            client.mutate().build().getWebClient().getHttpClient().dispose();
+        }
 
         // Print the response body
         System.out.println("Response Body: " + responseBody);
