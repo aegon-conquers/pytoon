@@ -1,0 +1,19 @@
+from datetime import datetime
+
+def check_message_state(**kwargs):
+    messages = kwargs['ti'].xcom_pull(task_ids='pull_messages')
+    if not messages:
+        raise ValueError('No messages received')
+    
+    success_found = False
+    for msg in messages:
+        payload = json.loads(msg['message']['data'])
+        publish_time = msg['message']['publishTime']
+        publish_datetime = datetime.strptime(publish_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+        print(f"Message published at: {publish_datetime}")
+
+        if payload.get('state') == 'success':
+            success_found = True
+    
+    if not success_found:
+        raise ValueError('No success message found')
