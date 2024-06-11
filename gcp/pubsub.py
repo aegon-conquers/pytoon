@@ -1,40 +1,44 @@
-from airflow import models
-from airflow.providers.google.cloud.operators.dataproc import (
-    DataprocCreateClusterOperator,
-    DataprocDeleteClusterOperator,
-    DataprocSubmitJobOperator,
-)
-from airflow.providers.google.cloud.operators.pubsub import PubSubPullOperator
-from airflow.operators.python import PythonOperator
-from airflow.utils.dates import days_ago
-from airflow.utils.trigger_rule import TriggerRule
+import base64
 import json
-
-# Define default arguments for the DAG
-default_args = {
-    'start_date': days_ago(1),
-    'retries': 1,
-}
+from datetime import datetime
+from airflow.models import Variable
 
 def check_message_state(**kwargs):
     messages = kwargs['ti'].xcom_pull(task_ids='pull_messages')
     if not messages:
         raise ValueError('No messages received')
     
+    success_found = False
     for msg in messages:
-        payload = json.loads(msg['message']['data'])
-        if payload.get('state') == 'success':
-            return True
-    return False
+        try:
+            # Decode base64 data
+            message_data = base64.b64decode(msg['message']['data']).decode('utf-8')
+            print(f"Decoded message data: {message_data}")
+            
+            # Parse JSON
+            payload = json.loads(message_data)
+            print(f"Parsed payload: {payload}")
+            
+            # Check for success state and log publish time
+            if payload.get('state') == 'success':
+                publish_time = msg['message']['publishTime']
+                publish_datetime = datetime.strptime(publish_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+                print(f"Message published at: {publish_datetime}")
+                success_found = True
+        except (json.JSONDecodeError, base64.binascii.Error) as e:
+            print(f"Error decoding or parsing message: {e}")
+            print(f"Message content: {msg['message']['data']}")
+    
+    if not success_found:
+        raise ValueError('No success message found')
 
-# Define the DAG
+# Example usage in the Airflow DAG
 with models.DAG(
     'dataproc_workflow_with_pubsub',
     default_args=default_args,
-    schedule_interval=None,  # This DAG will not run on a schedule
+    schedule_interval=None,
 ) as dag:
 
-    # Task to pull messages from Pub/Sub topic
     pull_messages = PubSubPullOperator(
         task_id='pull_messages',
         project_id='your-project-id',
@@ -43,14 +47,12 @@ with models.DAG(
         ack_messages=True,
     )
 
-    # Task to check if the message state is success
     check_state = PythonOperator(
         task_id='check_state',
         python_callable=check_message_state,
         provide_context=True,
     )
 
-    # Task to create a Dataproc cluster
     create_cluster = DataprocCreateClusterOperator(
         task_id='create_cluster',
         project_id='your-project-id',
@@ -68,7 +70,6 @@ with models.DAG(
         },
     )
 
-    # Task to submit a PySpark job to the Dataproc cluster
     submit_pyspark_job = DataprocSubmitJobOperator(
         task_id='submit_pyspark_job',
         job={
@@ -83,14 +84,12 @@ with models.DAG(
         project_id='your-project-id',
     )
 
-    # Task to delete the Dataproc cluster
     delete_cluster = DataprocDeleteClusterOperator(
         task_id='delete_cluster',
         project_id='your-project-id',
         cluster_name='example-cluster',
         region='your-region',
-        trigger_rule=TriggerRule.ALL_DONE,  # Ensure the cluster is deleted even if the job fails
+        trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    # Set the task dependencies
     pull_messages >> check_state >> create_cluster >> submit_pyspark_job >> delete_cluster
