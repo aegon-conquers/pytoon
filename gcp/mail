@@ -1,0 +1,67 @@
+from airflow.operators.email import EmailOperator
+
+def create_email_operator(task_id, to, subject, html_content):
+    return EmailOperator(
+        task_id=task_id,
+        to=to,
+        subject=subject,
+        html_content=html_content,
+    )
+
+
+def success_callback(context):
+    email_task = create_email_operator(
+        task_id='success_email',
+        to='your-email@example.com',
+        subject='Task Success: {{ task_instance.task_id }}',
+        html_content='The task {{ task_instance.task_id }} succeeded.',
+    )
+    return email_task.execute(context=context)
+
+def failure_callback(context):
+    email_task = create_email_operator(
+        task_id='failure_email',
+        to='your-email@example.com',
+        subject='Task Failure: {{ task_instance.task_id }}',
+        html_content='The task {{ task_instance.task_id }} failed.',
+    )
+    return email_task.execute(context=context)
+
+
+from airflow import DAG
+from airflow.operators.dummy import DummyOperator
+from airflow.utils.dates import days_ago
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+    'email_on_failure': False,  # Disable global email notifications
+    'email_on_retry': False,
+}
+
+with DAG(
+    dag_id='my_dag_with_notifications',
+    default_args=default_args,
+    schedule_interval=None,
+    catchup=False,
+) as dag:
+
+    start_task = DummyOperator(
+        task_id='start_task'
+    )
+
+    task_with_success_notification = DummyOperator(
+        task_id='task_with_success_notification',
+        on_success_callback=success_callback
+    )
+
+    task_with_failure_notification = DummyOperator(
+        task_id='task_with_failure_notification',
+        on_failure_callback=failure_callback
+    )
+
+    end_task = DummyOperator(
+        task_id='end_task'
+    )
+
+    start_task >> task_with_success_notification >> task_with_failure_notification >> end_task
