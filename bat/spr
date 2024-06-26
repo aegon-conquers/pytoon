@@ -1,0 +1,277 @@
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-batch</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.batch</groupId>
+    <artifactId>spring-batch-core</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.batch</groupId>
+    <artifactId>spring-batch-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-rest</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public Job processJob() {
+        return jobBuilderFactory.get("processJob")
+                .flow(step1())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step step1() {
+        return stepBuilderFactory.get("step1")
+                .tasklet(new CustomTasklet())
+                .build();
+    }
+}
+
+Step 2: Configure the Spring Batch Job
+Create a batch configuration class to set up your job, steps, and tasklets.
+
+
+import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+@Component
+public class CustomTasklet implements Tasklet {
+
+    @Autowired
+    private MyRepository myRepository; // Your JPA repository
+
+    @Autowired
+    private RestTemplate restTemplate; // REST client to call external APIs
+
+    private static final int THREAD_POOL_SIZE = 10;
+
+    @Override
+    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+        List<MyEntity> records = myRepository.findAllById(someId); // Fetch records by ID
+
+        List<CompletableFuture<Void>> futures = records.stream()
+                .map(record -> CompletableFuture.runAsync(() -> processRecord(record), executorService))
+                .toList();
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return RepeatStatus.FINISHED;
+    }
+
+    private void processRecord(MyEntity record) {
+        // Call the external API
+        String response = restTemplate.postForObject("http://external-api.com/endpoint", record, String.class);
+
+        // Process the response and save it back to the DB
+        record.setApiResponse(response);
+        myRepository.save(record);
+    }
+}
+
+
+Step 3: Create a Custom Tasklet
+Create a custom tasklet to process each record concurrently and call another API.
+
+import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+@Component
+public class CustomTasklet implements Tasklet {
+
+    @Autowired
+    private MyRepository myRepository; // Your JPA repository
+
+    @Autowired
+    private RestTemplate restTemplate; // REST client to call external APIs
+
+    private static final int THREAD_POOL_SIZE = 10;
+
+    @Override
+    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+        List<MyEntity> records = myRepository.findAllById(someId); // Fetch records by ID
+
+        List<CompletableFuture<Void>> futures = records.stream()
+                .map(record -> CompletableFuture.runAsync(() -> processRecord(record), executorService))
+                .toList();
+
+        // Wait for all tasks to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        return RepeatStatus.FINISHED;
+    }
+
+    private void processRecord(MyEntity record) {
+        // Call the external API
+        String response = restTemplate.postForObject("http://external-api.com/endpoint", record, String.class);
+
+        // Process the response and save it back to the DB
+        record.setApiResponse(response);
+        myRepository.save(record);
+    }
+}
+
+Step 4: Create a Controller to Trigger the Batch Job
+Create a controller to trigger the batch job via an HTTP endpoint.
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/batch")
+public class BatchJobController {
+
+    @Autowired
+    private JobLauncher jobLauncher;
+
+    @Autowired
+    private Job job;
+
+    @PostMapping("/run")
+    public ResponseEntity<String> runBatchJob(@RequestParam("id") Long id) {
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addLong("startAt", System.currentTimeMillis())
+                    .addLong("id", id)
+                    .toJobParameters();
+            jobLauncher.run(job, jobParameters);
+            return ResponseEntity.ok("Batch job has been invoked");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to run batch job");
+        }
+    }
+}
+
+Step 5: Configure the RestTemplate Bean
+Configure the RestTemplate bean to be used for calling external APIs.
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+}
+
+Step 6: Create Your Entity and Repository
+Create your entity class and JPA repository.
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Entity
+public class MyEntity {
+    @Id
+    private Long id;
+    private String data;
+    private String apiResponse;
+
+    // Getters and Setters
+}
+
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+
+public interface MyRepository extends JpaRepository<MyEntity, Long> {
+    List<MyEntity> findAllById(Long id);
+}
+
+
+Explanation:
+Batch Configuration: The BatchConfiguration class sets up a batch job with a single step.
+Custom Tasklet: The CustomTasklet class fetches records from the database, processes them concurrently using CompletableFuture, calls an external API, and saves the response back to the database.
+Controller: The BatchJobController triggers the batch job via an HTTP endpoint.
+RestTemplate: The RestTemplate bean is configured to call external APIs.
+Entity and Repository: The MyEntity class represents the database entity, and MyRepository provides CRUD operations on the entity.
+This setup ensures that your batch processing is handled concurrently and efficiently, making use of Spring Batch for job orchestration and asynchronous processing for concurrent API calls.
+
+
