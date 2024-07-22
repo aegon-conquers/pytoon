@@ -1,0 +1,16 @@
+1. Set the Agenda
+As the tech lead for one of the three scrum teams, I have been proactive in setting clear and achievable goals for my team. For instance, during the initial stages of Project A, I established a comprehensive roadmap that outlined all major milestones and deliverables. This roadmap was shared and discussed with the team, ensuring everyone was aligned and understood their roles and responsibilities.
+
+I leveraged my expertise in PySpark, Big Data, SQL, and Spring Boot APIs to break down complex tasks into manageable components, making it easier for the team to execute. This approach not only ensured timely delivery but also maintained high-quality standards throughout the project lifecycle.
+
+2. Bring Others with You
+Collaboration and team cohesion are critical to our success. In Project B, we faced significant challenges in integrating various data sources. To tackle this, I organized a series of knowledge-sharing sessions and workshops where team members could learn from each other and share their expertise. This initiative not only enhanced our collective problem-solving capabilities but also fostered a strong sense of camaraderie within the team.
+
+I also encouraged open communication and regular feedback through daily stand-ups and retrospectives. By creating an environment where everyone felt heard and valued, we were able to leverage diverse perspectives and innovative ideas, leading to more effective solutions and a highly motivated team.
+
+3. Do It the Right Way
+Integrity and adherence to best practices have always been at the forefront of my leadership style. In our work on Project A, I ensured that we followed industry best practices for data security and compliance, particularly when handling sensitive information. This involved rigorous code reviews, thorough testing, and adherence to established coding standards.
+
+Moreover, I implemented automated testing and continuous integration pipelines for our Spring Boot APIs, which significantly reduced the risk of bugs and enhanced the overall reliability of our applications. By prioritizing quality and maintaining a high standard of excellence, we not only met our project objectives but also earned the trust and confidence of our stakeholders.
+
+This approach to leadership has enabled me to guide my team effectively, deliver high-quality results, and foster a collaborative and innovative working environment. By setting a clear agenda, bringing others along, and doing things the right way, I have contributed to the success of our projects and the overall goals of our organization.
