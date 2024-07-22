@@ -1,16 +1,26 @@
 1. Set the Agenda
-As the tech lead for one of the three scrum teams, I have been proactive in setting clear and achievable goals for my team. For instance, during the initial stages of Project A, I established a comprehensive roadmap that outlined all major milestones and deliverables. This roadmap was shared and discussed with the team, ensuring everyone was aligned and understood their roles and responsibilities.
+In Project Lambda, I outlined a clear roadmap for enabling a data pipeline that transformed small market data, refining 5000 files and identifying $12B in opportunities. By setting specific milestones and deliverables, I ensured that the team remained focused and on track.
 
-I leveraged my expertise in PySpark, Big Data, SQL, and Spring Boot APIs to break down complex tasks into manageable components, making it easier for the team to execute. This approach not only ensured timely delivery but also maintained high-quality standards throughout the project lifecycle.
+For Project STrack, a self-initiative project, I established a clear vision and objectives to compile data processing steps into trackable insights using PySpark and Spring Boot. This proactive approach allowed us to create a robust system that provided valuable insights efficiently.
+
+In the GCP project, I defined clear goals for rewriting the data ingestion process using PySpark and automating it through Google Cloud tools. My agenda-setting included coordinating with extended teams to ensure seamless integration and automation.
 
 2. Bring Others with You
-Collaboration and team cohesion are critical to our success. In Project B, we faced significant challenges in integrating various data sources. To tackle this, I organized a series of knowledge-sharing sessions and workshops where team members could learn from each other and share their expertise. This initiative not only enhanced our collective problem-solving capabilities but also fostered a strong sense of camaraderie within the team.
+In Project Lambda, I fostered a collaborative environment by organizing knowledge-sharing sessions and workshops, enabling the team to overcome challenges in data transformation and achieve our goals collectively.
 
-I also encouraged open communication and regular feedback through daily stand-ups and retrospectives. By creating an environment where everyone felt heard and valued, we were able to leverage diverse perspectives and innovative ideas, leading to more effective solutions and a highly motivated team.
+During Project STrack, I encouraged open communication and regular feedback through daily stand-ups and retrospectives. This collaborative approach allowed us to leverage diverse perspectives and innovative ideas, enhancing our problem-solving capabilities.
+
+In the GCP project, collaboration with extended teams was crucial. I facilitated cross-team interactions and ensured everyone was aligned with the project objectives, leading to a successful rewrite of the data ingestion process and automation using Google Cloud tools.
+
+For the Campaigns project, which involved enabling 45 campaigns for the large market and driving $23B in opportunity, I coordinated efforts across three different teams. My leadership ensured that design-intensive tasks were completed smoothly, and users were highly satisfied with the outcome.
 
 3. Do It the Right Way
-Integrity and adherence to best practices have always been at the forefront of my leadership style. In our work on Project A, I ensured that we followed industry best practices for data security and compliance, particularly when handling sensitive information. This involved rigorous code reviews, thorough testing, and adherence to established coding standards.
+In Project Lambda, I ensured adherence to best practices for data security and compliance. Rigorous code reviews, thorough testing, and adherence to established coding standards were key to our success.
 
-Moreover, I implemented automated testing and continuous integration pipelines for our Spring Boot APIs, which significantly reduced the risk of bugs and enhanced the overall reliability of our applications. By prioritizing quality and maintaining a high standard of excellence, we not only met our project objectives but also earned the trust and confidence of our stakeholders.
+For Project STrack, I implemented automated testing and continuous integration pipelines for our Spring Boot APIs, significantly reducing the risk of bugs and enhancing the reliability of our applications.
+
+In the GCP project, I prioritized quality and maintained high standards of excellence throughout the data ingestion process rewrite. This involved meticulous planning and execution, ensuring the automation was robust and efficient.
+
+During the Campaigns project, I led the design-intensive effort by emphasizing best practices and quality standards. This meticulous approach resulted in highly effective campaigns that drove significant opportunities and user satisfaction.
 
 This approach to leadership has enabled me to guide my team effectively, deliver high-quality results, and foster a collaborative and innovative working environment. By setting a clear agenda, bringing others along, and doing things the right way, I have contributed to the success of our projects and the overall goals of our organization.
