@@ -1,0 +1,26 @@
+Key Learnings for This Year
+1. Technology Upgrades and Mastery
+
+PySpark and Big Data: This year, I have deepened my expertise in PySpark and big data processing. The GCP project, where I rewrote the data ingestion process and automated it using Google Cloud tools, required a thorough understanding of these technologies. I have learned how to optimize PySpark jobs, manage large-scale data processing, and leverage cloud platforms for automation.
+
+Spring Boot APIs: Working on Project STrack has enhanced my proficiency in developing and maintaining Spring Boot APIs. I have learned how to implement robust and scalable APIs, integrate them with big data processing frameworks, and ensure they meet performance and reliability standards.
+
+SQL and Data Transformation: Project Lambda involved complex data transformations, where I refined 5000 files and identified $12B in opportunities. This project has strengthened my skills in SQL and data transformation, enabling me to derive valuable insights from vast datasets.
+
+2. Leadership Qualities
+
+Setting Clear Agendas: I have learned the importance of setting clear agendas and defining specific goals and milestones for each project. This has helped my team stay focused and achieve our objectives efficiently, as seen in Project Lambda and the Campaigns project.
+
+Effective Communication: Bringing others with me through effective communication has been a crucial learning. Whether it was through daily stand-ups, retrospectives in Project STrack, or cross-team coordination in the GCP project, clear and open communication has been key to our success.
+
+Quality and Best Practices: Ensuring high standards and adherence to best practices has been a significant learning. Implementing automated testing, continuous integration, and rigorous code reviews have been vital in maintaining the quality and reliability of our deliverables.
+
+3. Constructive Political Navigation
+
+Stakeholder Management: I have learned the importance of managing stakeholders effectively. In the Campaigns project, coordinating efforts across three different teams required careful stakeholder management to ensure alignment and collaboration.
+
+Building Alliances: Forming strategic alliances within and outside the team has been a key learning. Collaborating with extended teams in the GCP project and fostering a culture of knowledge-sharing in Project Lambda has helped in achieving our goals more efficiently.
+
+Influencing and Persuasion: Constructive political navigation involves influencing and persuading others to adopt best practices and innovative solutions. I have learned how to present compelling arguments, backed by data and insights, to drive decision-making in the right direction.
+
+These key learnings have not only contributed to my professional growth but have also enabled me to lead my team more effectively and deliver high-impact results across various projects.
