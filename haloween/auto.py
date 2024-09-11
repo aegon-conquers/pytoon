@@ -4,6 +4,10 @@ import time
 # Initialize UART for DY-HV20T communication (for sound playback)
 uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
 
+# Power PIR sensor from Pin 10 (3.3V output)
+pir_vcc = Pin(10, Pin.OUT)
+pir_vcc.value(1)  # Set Pin 10 to HIGH to power the PIR sensor
+
 # Initialize PIR motion sensor on GPIO15 (VOUT connected to this pin)
 pir_sensor = Pin(15, Pin.IN)
 
