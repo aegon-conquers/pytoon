@@ -1,0 +1,15 @@
+1. Set the Agenda
+
+	•	“In leading the development of our 3-tier architecture project, I prioritized setting a clear, actionable agenda from the outset. This included establishing key milestones, technical requirements, and cross-team dependencies, which were essential for our complex architecture. I conducted a project kickoff to align our goals and used a roadmap that clarified each team’s role—UI, API, and Data Engineering—ensuring that we had a shared understanding of project deliverables. I scheduled bi-weekly check-ins to monitor progress and address any roadblocks, which helped us stay agile and aligned. Setting a solid agenda allowed us to achieve a balanced workload across teams while keeping focus on our key objective: launching ESF Campaigns efficiently and on schedule.”
+
+2. Bring Others with You
+
+	•	“Our success depended on collaboration with 4 other teams, each with their own goals. I prioritized open communication and accountability by setting up collaborative working groups that included key members from each team. To foster collaboration, I organized regular syncs to track cross-functional dependencies, anticipate challenges, and share updates. Additionally, I created a shared repository for project documentation to centralize resources, enabling all teams to access technical specifications, feedback, and requirements. This approach reduced redundancies, kept everyone informed, and fostered a stronger sense of ownership. By involving everyone in a unified process, we were able to anticipate potential integration issues early, resulting in a smoother product launch.”
+
+3. Do It the Right Way
+
+	•	“Executing ESF Campaigns required balancing speed with quality, especially given the architectural complexities. I enforced a ‘do it right the first time’ approach by implementing a rigorous code review and testing process across all tiers—UI, API, and Data. To ensure that we adhered to best practices, I integrated automated tests at each layer and required performance benchmarking to validate stability under load. Additionally, I held retrospective sessions to evaluate each phase and incorporated the feedback immediately. This iterative approach allowed us to fine-tune our process, minimize technical debt, and produce a reliable, scalable product that not only met but exceeded our enterprise standards. By maintaining focus on quality at every stage, we built a product that the team—and our stakeholders—could trust.”
+
+Full Example Elevator Pitch
+
+“As a Senior Engineer, Tech Lead, and Data Architect, I led my team of UI, API, and Data Engineers in delivering the complex, multi-tier architecture for ESF Campaigns. By setting a clear agenda with achievable milestones, fostering collaboration with 4 teams, and adhering to high standards through structured testing and iteration, we achieved a successful launch. This initiative strengthened cross-functional partnerships and produced a robust, scalable product that aligns with enterprise needs. Each step was intentional, reinforcing a commitment to quality, team cohesion, and meaningful results.”
