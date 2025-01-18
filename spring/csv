@@ -1,0 +1,57 @@
+package com.example.singlestorejson.util;
+
+import com.example.singlestorejson.entity.AbstractRecord;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CsvConverter {
+
+    // Converts any AbstractRecord to CSV
+    public static String convertToCsv(AbstractRecord record) throws IllegalAccessException {
+        StringBuilder csvString = new StringBuilder();
+        // Get all fields of the class, including private ones
+        Field[] fields = record.getClass().getDeclaredFields();
+
+        // Loop through fields and append their values to the CSV string
+        for (int i = 0; i < fields.length; i++) {
+            fields[i].setAccessible(true);  // Allows access to private fields
+            Object value = fields[i].get(record);
+            if (value != null) {
+                csvString.append(value.toString());
+            } else {
+                csvString.append("");  // Handle null values
+            }
+            if (i < fields.length - 1) {
+                csvString.append(",");  // Separate values by comma
+            }
+        }
+
+        return csvString.toString();
+    }
+
+    // Converts a list of AbstractRecord to a CSV format with headers
+    public static String convertListToCsv(List<AbstractRecord> records) throws IllegalAccessException {
+        StringBuilder csvString = new StringBuilder();
+
+        if (records != null && !records.isEmpty()) {
+            // Get headers (field names)
+            Field[] fields = records.get(0).getClass().getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                csvString.append(fields[i].getName());
+                if (i < fields.length - 1) {
+                    csvString.append(",");
+                }
+            }
+            csvString.append("\n");
+
+            // Convert records to CSV format
+            for (AbstractRecord record : records) {
+                csvString.append(convertToCsv(record));
+                csvString.append("\n");
+            }
+        }
+
+        return csvString.toString();
+    }
+}
