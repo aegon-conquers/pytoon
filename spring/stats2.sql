@@ -42,3 +42,22 @@ SELECT @full_query AS debug_query;
 PREPARE stmt FROM @full_query;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+
+-- Analyze data types for all columns in a specific table
+SET @db_name = 'your_database';
+SET @table_name = 'your_table';
+
+-- Step 1: Create a query for all columns in the table using information_schema
+SELECT 
+    CONCAT(
+        "SELECT '", column_name, "' AS column_name,",
+        " SUM(CASE WHEN `", column_name, "` REGEXP '^-?[0-9]+$' THEN 1 ELSE 0 END) AS bigint_count,",
+        " SUM(CASE WHEN `", column_name, "` REGEXP '^-?[0-9]+(\\.[0-9]+)?$' THEN 1 ELSE 0 END) AS float_count,",
+        " SUM(CASE WHEN `", column_name, "` REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN 1 ELSE 0 END) AS date_count,",
+        " SUM(CASE WHEN `", column_name, "` REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$' THEN 1 ELSE 0 END) AS datetime_count,",
+        " COUNT(*) AS total_count",
+        " FROM `", @db_name, "`.`", @table_name, "`"
+    )
+FROM information_schema.columns
+WHERE table_schema = @db_name AND table_name = @table_name;
