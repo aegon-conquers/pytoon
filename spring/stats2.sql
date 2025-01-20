@@ -61,3 +61,12 @@ SELECT
     )
 FROM information_schema.columns
 WHERE table_schema = @db_name AND table_name = @table_name;
+
+
+SELECT 'column1' AS column_name,
+       SUM(CASE WHEN `column1` REGEXP '^-?[0-9]+$' THEN 1 ELSE 0 END) AS bigint_count,
+       SUM(CASE WHEN `column1` REGEXP '^-?[0-9]+(\\.[0-9]+)?$' THEN 1 ELSE 0 END) AS float_count,
+       SUM(CASE WHEN `column1` REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN 1 ELSE 0 END) AS date_count,
+       SUM(CASE WHEN `column1` REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$' THEN 1 ELSE 0 END) AS datetime_count,
+       COUNT(*) AS total_count
+FROM `your_database`.`your_table`;
