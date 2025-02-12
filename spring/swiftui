@@ -1,0 +1,76 @@
+import SwiftUI
+
+// Model for API response (adjust based on your actual JSON structure)
+struct APIResponse: Codable, Identifiable {
+    let id: Int
+    let name: String
+    // Add other properties based on your API response
+}
+
+// ViewModel to handle API calls and data
+class APIManager: ObservableObject {
+    @Published var results: [APIResponse] = []
+    
+    func fetchData(query: String) async {
+        // Replace with your actual API endpoint
+        guard let url = URL(string: "https://api.example.com/search?q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") else {
+            print("Invalid URL")
+            return
+        }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let decodedResponse = try JSONDecoder().decode([APIResponse].self, from: data)
+            
+            DispatchQueue.main.async {
+                self.results = decodedResponse
+            }
+        } catch {
+            print("Error fetching data: \(error)")
+        }
+    }
+}
+
+// Main View
+struct ContentView: View {
+    @StateObject private var apiManager = APIManager()
+    @State private var searchText = ""
+    
+    var body: some View {
+        VStack {
+            // Search text field
+            TextField("Enter search query", text: $searchText, onCommit: {
+                Task {
+                    await apiManager.fetchData(query: searchText)
+                }
+            })
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .padding()
+            
+            // Results table
+            Table(apiManager.results) {
+                TableColumn("ID") { response in
+                    Text("\(response.id)")
+                }
+                
+                TableColumn("Name") { response in
+                    Text(response.name)
+                }
+                // Add more columns based on your API response structure
+            }
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+// App entry point
+@main
+struct SearchUtilityApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
