@@ -1,10 +1,9 @@
-import mysql.connector
-from mysql.connector import Error
+import singlestoredb as s2
 
 # Database connection details
 config = {
-    'host': 'your_host',          # e.g., 'localhost' or SingleStore server IP
-    'port': 3306,                 # Default SingleStore/MySQL port
+    'host': 'your_host',          # e.g., 'svc-xxx.singlestore.com' or localhost
+    'port': 3306,                 # Default SingleStore port
     'user': 'your_username',      # Your SingleStore username
     'password': 'your_password',  # Your SingleStore password
     'database': 'your_schema'     # Your schema/database name
@@ -13,7 +12,7 @@ config = {
 def get_table_record_counts():
     try:
         # Establish connection
-        connection = mysql.connector.connect(**config)
+        connection = s2.connect(**config)
         cursor = connection.cursor()
 
         # Query to get all table names in the schema
@@ -39,7 +38,7 @@ def get_table_record_counts():
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
                 count = cursor.fetchone()[0]
                 table_counts[table_name] = count
-            except Error as e:
+            except s2.Error as e:
                 print(f"Error counting records in table '{table_name}': {e}")
 
         # Print the results
@@ -49,11 +48,11 @@ def get_table_record_counts():
             print(f"{table:<30} | {count:>10}")
         print("-" * 50)
 
-    except Error as e:
+    except s2.Error as e:
         print(f"Error connecting to SingleStore: {e}")
 
     finally:
-        if 'connection' in locals() and connection.is_connected():
+        if 'connection' in locals() and connection:
             cursor.close()
             connection.close()
             print("Connection closed.")
