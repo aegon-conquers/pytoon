@@ -1,0 +1,97 @@
+import singlestoredb
+
+# Connection configuration for schema_1
+schema_1_config = {
+    'host': 'localhost',        # Replace with your SingleStore host
+    'port': 3306,              # Default SingleStore port
+    'user': 'your_username',   # Replace with your username
+    'password': 'your_password', # Replace with your password
+    'database': 'schema_1'     # Replace with schema_1 database name
+}
+
+# Connection configuration for schema_2
+schema_2_config = {
+    'host': 'localhost',        # Replace with your SingleStore host
+    'port': 3306,              # Default SingleStore port
+    'user': 'your_username',   # Replace with your username
+    'password': 'your_password', # Replace with your password
+    'database': 'schema_2'     # Replace with schema_2 database name
+}
+
+# Output file paths
+drop_file_path = 'drop_tables_schema_1.sql'
+create_file_path = 'create_tables_schema_1.sql'
+
+def generate_drop_tables_from_schema_1():
+    """Generate DROP TABLE statements for all tables in schema_1."""
+    try:
+        conn = singlestoredb.connect(**schema_1_config)
+        cursor = conn.cursor()
+
+        # Get all table names from schema_1
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = %s
+        """, (schema_1_config['database'],))
+        tables = [row[0] for row in cursor.fetchall()]
+
+        if not tables:
+            print("No tables found in schema_1.")
+            return
+
+        # Write DROP TABLE statements to file
+        with open(drop_file_path, 'w') as file:
+            file.write("SET FOREIGN_KEY_CHECKS = 0;\n")
+            for table in tables:
+                file.write(f"DROP TABLE IF EXISTS {table};\n")
+            file.write("SET FOREIGN_KEY_CHECKS = 1;\n")
+
+        print(f"DROP TABLE statements written to {drop_file_path}")
+
+    except singlestoredb.Error as e:
+        print(f"Error connecting to schema_1 or generating DROP statements: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+def generate_create_tables_from_schema_2():
+    """Generate CREATE TABLE statements from schema_2 for schema_1."""
+    try:
+        conn = singlestoredb.connect(**schema_2_config)
+        cursor = conn.cursor()
+
+        # Get all table names from schema_2
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = %s
+        """, (schema_2_config['database'],))
+        tables = [row[0] for row in cursor.fetchall()]
+
+        if not tables:
+            print("No tables found in schema_2.")
+            return
+
+        # Write CREATE TABLE statements to file
+        with open(create_file_path, 'w') as file:
+            for table in tables:
+                cursor.execute(f"SHOW CREATE TABLE {table}")
+                create_statement = cursor.fetchone()[1]  # Second column is the CREATE statement
+                file.write(f"{create_statement};\n\n")
+
+        print(f"CREATE TABLE statements written to {create_file_path}")
+
+    except singlestoredb.Error as e:
+        print(f"Error connecting to schema_2 or generating CREATE statements: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+if __name__ == "__main__":
+    generate_drop_tables_from_schema_1()
+    generate_create_tables_from_schema_2()
