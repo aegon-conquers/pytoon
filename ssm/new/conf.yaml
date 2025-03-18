@@ -1,0 +1,34 @@
+# General configuration
+delimiter: "^"
+lines_terminated_by: "\n"
+escaped_by: "\\"
+bulk_insert_buffer_size: 268435456  # 256 MB in bytes
+max_retries: 3
+retry_delay: 10  # seconds in delay between retries
+log_file: "failed_loads.log"
+
+# Data cleaning and transformation
+special_chars_to_remove: "[~^\\s-]"
+default_string_replacements:
+  - { pattern: "[~^]", replacement: " " }
+
+# Column type casting (default mappings)
+column_type_mappings:
+  decimal: "double"
+  double: "double"
+  float: "double"
+  string: "string"
+  integer: "int"
+  timestamp: "timestamp"
+
+# Directory settings
+output_base_dir: "/user/me/data/usecase1/singlestore"
+
+# SingleStore connection settings
+mysql_config_file: "/tmp/mysql.cnf"
+
+# Optional columns (can be missing from Hive data, populated by default in SingleStore)
+optional_columns:
+  supplier: [created_at, updated_at]
+  customer: [last_login]
+  # Add more tables and their optional columns as needed
