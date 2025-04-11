@@ -171,12 +171,13 @@ class APIDataComparator:
 def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column: str, singlestore_id_column: str) -> Dict:
     """
     Compare two DataFrames row by row and column by column using separate ID columns.
+    Assumes SingleStore ID is unique; ignores extra M7 records not matching SingleStore IDs.
     
     Args:
         df1: First DataFrame (M7)
         df2: Second DataFrame (SingleStore)
-        m7_id_column: ID column name for M7 DataFrame
-        singlestore_id_column: ID column name for SingleStore DataFrame
+        m7_id_column: ID column name for M7 DataFrame (may have duplicates)
+        singlestore_id_column: ID column name for SingleStore DataFrame (assumed unique)
         
     Returns:
         Dictionary containing comparison results
@@ -219,6 +220,14 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         logger.warning(f"SingleStore ID column '{singlestore_id_column}' not in SingleStore columns: {list(df2.columns)}")
         return comparison_results
 
+    # Check for duplicate IDs in SingleStore only (assumed unique)
+    singlestore_duplicates = df2[singlestore_id_column].duplicated(keep=False)
+    if singlestore_duplicates.any():
+        duplicate_ids = df2[singlestore_id_column][singlestore_duplicates].unique().tolist()
+        comparison_results["error"] = f"SingleStore ID column '{singlestore_id_column}' contains duplicates: {duplicate_ids}"
+        logger.warning(f"Duplicate IDs in SingleStore DataFrame for '{singlestore_id_column}': {duplicate_ids}")
+        return comparison_results
+
     comparison_results["row_count_difference"] = {
         "m7_rows": len(df1),
         "singlestore_rows": len(df2)
@@ -228,29 +237,18 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         # Rename SingleStore ID column to match M7's for merging
         df2_mapped = df2.rename(columns={singlestore_id_column: m7_id_column})
         
-        # Merge DataFrames on the ID column to align rows
-        merged = df1.merge(df2_mapped, on=m7_id_column, how='outer', suffixes=('_m7', '_singlestore'), indicator=True)
+        # Inner merge to keep only rows matching SingleStore IDs
+        merged = df1.merge(df2_mapped, on=m7_id_column, how='inner', suffixes=('_m7', '_singlestore'))
         
-        # Identify missing rows
-        m7_only = merged[merged['_merge'] == 'left_only'][m7_id_column].tolist()
-        singlestore_only = merged[merged['_merge'] == 'right_only'][m7_id_column].tolist()
-        
-        if m7_only:
-            comparison_results["missing_rows_singlestore"] = m7_only
-            logger.warning(f"Rows in M7 but not in SingleStore: {m7_only}")
-        if singlestore_only:
-            comparison_results["missing_rows_m7"] = singlestore_only
-            logger.warning(f"Rows in SingleStore but not in M7: {singlestore_only}")
-
-        # Compare values for common rows
-        common_rows = merged[merged['_merge'] == 'both']
+        # No missing rows reported since we only care about matched rows
+        # Compare values for matched rows
         for col in common_cols:
             if col == m7_id_column:  # Skip the ID column itself
                 continue
             m7_col = f"{col}_m7"
             singlestore_col = f"{col}_singlestore"
-            if m7_col in common_rows.columns and singlestore_col in common_rows.columns:
-                differences = common_rows[common_rows[m7_col].astype(str) != common_rows[singlestore_col].astype(str)]
+            if m7_col in merged.columns and singlestore_col in merged.columns:
+                differences = merged[merged[m7_col].astype(str) != merged[singlestore_col].astype(str)]
                 for _, row in differences.iterrows():
                     comparison_results["value_differences"].append({
                         "row_id": row[m7_id_column],
