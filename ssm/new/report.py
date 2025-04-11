@@ -171,12 +171,12 @@ class APIDataComparator:
 def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column: str, singlestore_id_column: str) -> Dict:
     """
     Compare two DataFrames row by row and column by column using separate ID columns.
-    Assumes SingleStore ID is unique; ignores extra M7 records not matching SingleStore IDs.
+    Assumes SingleStore ID is unique; compares all matching M7 records, ignoring unmatched.
     
     Args:
         df1: First DataFrame (M7)
         df2: Second DataFrame (SingleStore)
-        m7_id_column: ID column name for M7 DataFrame (may have duplicates)
+        m7_id_column: ID column name for M7 DataFrame (duplicates allowed)
         singlestore_id_column: ID column name for SingleStore DataFrame (assumed unique)
         
     Returns:
@@ -237,11 +237,16 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         # Rename SingleStore ID column to match M7's for merging
         df2_mapped = df2.rename(columns={singlestore_id_column: m7_id_column})
         
-        # Inner merge to keep only rows matching SingleStore IDs
+        # Inner merge to keep only rows with matching IDs, preserving M7 duplicates
         merged = df1.merge(df2_mapped, on=m7_id_column, how='inner', suffixes=('_m7', '_singlestore'))
         
-        # No missing rows reported since we only care about matched rows
-        # Compare values for matched rows
+        # Log if M7 has duplicates that were matched
+        m7_duplicates = merged[m7_id_column].duplicated(keep=False)
+        if m7_duplicates.any():
+            duplicate_count = m7_duplicates.sum() // 2  # Each duplicate pair counts once
+            logger.info(f"M7 DataFrame has {duplicate_count} IDs with multiple matches to SingleStore")
+
+        # Compare values for all matched rows
         for col in common_cols:
             if col == m7_id_column:  # Skip the ID column itself
                 continue
