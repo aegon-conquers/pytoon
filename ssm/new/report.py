@@ -195,6 +195,19 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         comparison_results["error"] = "Comparison skipped due to missing data"
         return comparison_results
     
+    # Check for duplicate column names within each DataFrame
+    m7_cols = df1.columns
+    m7_duplicates = m7_cols[m7_cols.duplicated(keep=False)].tolist()
+    if m7_duplicates:
+        logger.warning(f"M7 DataFrame has duplicate columns: {m7_duplicates}. Renaming to make unique.")
+        df1 = df1.rename(columns={col: f"{col}_{i}" for i, col in enumerate(m7_cols) if m7_cols.duplicated()[i] and col != m7_id_column})
+
+    singlestore_cols = df2.columns
+    singlestore_duplicates = singlestore_cols[singlestore_cols.duplicated(keep=False)].tolist()
+    if singlestore_duplicates:
+        logger.warning(f"SingleStore DataFrame has duplicate columns: {singlestore_duplicates}. Renaming to make unique.")
+        df2 = df2.rename(columns={col: f"{col}_{i}" for i, col in enumerate(singlestore_cols) if singlestore_cols.duplicated()[i] and col != singlestore_id_column})
+
     cols1, cols2 = set(df1.columns), set(df2.columns)
     if cols1 != cols2:
         comparison_results["column_differences"] = {
