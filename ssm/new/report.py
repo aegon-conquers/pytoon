@@ -195,18 +195,8 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         comparison_results["error"] = "Comparison skipped due to missing data"
         return comparison_results
     
-    # Check for duplicate column names within each DataFrame
-    m7_cols = df1.columns
-    m7_duplicates = m7_cols[m7_cols.duplicated(keep=False)].tolist()
-    if m7_duplicates:
-        logger.warning(f"M7 DataFrame has duplicate columns: {m7_duplicates}. Renaming to make unique.")
-        df1 = df1.rename(columns={col: f"{col}_{i}" for i, col in enumerate(m7_cols) if m7_cols.duplicated()[i] and col != m7_id_column})
-
-    singlestore_cols = df2.columns
-    singlestore_duplicates = singlestore_cols[singlestore_cols.duplicated(keep=False)].tolist()
-    if singlestore_duplicates:
-        logger.warning(f"SingleStore DataFrame has duplicate columns: {singlestore_duplicates}. Renaming to make unique.")
-        df2 = df2.rename(columns={col: f"{col}_{i}" for i, col in enumerate(singlestore_cols) if singlestore_cols.duplicated()[i] and col != singlestore_id_column})
+    logger.info(f"M7 columns before merge: {list(df1.columns)}")
+    logger.info(f"SingleStore columns before merge: {list(df2.columns)}")
 
     cols1, cols2 = set(df1.columns), set(df2.columns)
     if cols1 != cols2:
@@ -247,11 +237,18 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
     }
 
     try:
-        # Rename SingleStore ID column to match M7's for merging
+        # Prepare SingleStore DataFrame: rename ID column and drop its original 'sm' to avoid overlap
         df2_mapped = df2.rename(columns={singlestore_id_column: m7_id_column})
+        if m7_id_column != singlestore_id_column and m7_id_column in df2.columns:
+            logger.info(f"Dropping original '{m7_id_column}' column from SingleStore to avoid merge conflict")
+            df2_mapped = df2_mapped.drop(columns=[m7_id_column], errors='ignore')
+        
+        logger.info(f"SingleStore columns after mapping: {list(df2_mapped.columns)}")
         
         # Inner merge to keep only rows with matching IDs, preserving M7 duplicates
         merged = df1.merge(df2_mapped, on=m7_id_column, how='inner', suffixes=('_m7', '_singlestore'))
+        
+        logger.info(f"Merged columns: {list(merged.columns)}")
         
         # Log if M7 has duplicates that were matched
         m7_duplicates = merged[m7_id_column].duplicated(keep=False)
