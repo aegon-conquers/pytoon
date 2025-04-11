@@ -168,92 +168,102 @@ class APIDataComparator:
             logger.error(f"Unexpected error fetching {url}: {str(e)}")
             return None, status
 
-    def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, id_column: str) -> Dict:
-        """
-        Compare two DataFrames row by row and column by column using specified ID column.
+def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column: str, singlestore_id_column: str) -> Dict:
+    """
+    Compare two DataFrames row by row and column by column using separate ID columns.
+    
+    Args:
+        df1: First DataFrame (M7)
+        df2: Second DataFrame (SingleStore)
+        m7_id_column: ID column name for M7 DataFrame
+        singlestore_id_column: ID column name for SingleStore DataFrame
         
-        Args:
-            df1: First DataFrame (M7)
-            df2: Second DataFrame (SingleStore)
-            id_column: Column to use as unique identifier
-            
-        Returns:
-            Dictionary containing comparison results
-        """
-        comparison_results = {
-            "column_differences": [],
-            "row_count_difference": None,
-            "value_differences": [],
-            "missing_rows_m7": [],
-            "missing_rows_singlestore": [],
-            "error": None
-        }
+    Returns:
+        Dictionary containing comparison results
+    """
+    comparison_results = {
+        "column_differences": [],
+        "row_count_difference": None,
+        "value_differences": [],
+        "missing_rows_m7": [],
+        "missing_rows_singlestore": [],
+        "error": None
+    }
 
-        if df1 is None or df2 is None:
-            comparison_results["error"] = "Comparison skipped due to missing data"
-            return comparison_results
-        
-        cols1, cols2 = set(df1.columns), set(df2.columns)
-        if cols1 != cols2:
-            comparison_results["column_differences"] = {
-                "m7_only": list(cols1 - cols2),
-                "singlestore_only": list(cols2 - cols1)
-            }
-            common_cols = list(cols1 & cols2)
-            if not common_cols:
-                comparison_results["error"] = "No common columns for comparison"
-                logger.warning("No common columns between DataFrames")
-                return comparison_results
-            df1 = df1[common_cols]
-            df2 = df2[common_cols]
-            logger.warning(f"Column differences detected: {comparison_results['column_differences']}")
-        else:
-            common_cols = list(cols1)
-
-        comparison_results["row_count_difference"] = {
-            "m7_rows": len(df1),
-            "singlestore_rows": len(df2)
-        }
-
-        if id_column not in common_cols:
-            comparison_results["error"] = f"Specified ID column '{id_column}' not found in both DataFrames"
-            logger.warning(f"ID column '{id_column}' not found in both DataFrames")
-            return comparison_results
-        
-        try:
-            df1.set_index(id_column, inplace=True)
-            df2.set_index(id_column, inplace=True)
-            
-            common_ids = df1.index.intersection(df2.index)
-            m7_only = df1.index.difference(df2.index)
-            singlestore_only = df2.index.difference(df1.index)
-            
-            if m7_only.any():
-                comparison_results["missing_rows_singlestore"] = m7_only.tolist()
-                logger.warning(f"Rows in M7 but not in SingleStore: {m7_only.tolist()}")
-            if singlestore_only.any():
-                comparison_results["missing_rows_m7"] = singlestore_only.tolist()
-                logger.warning(f"Rows in SingleStore but not in M7: {singlestore_only.tolist()}")
-
-            for idx in common_ids:
-                for col in common_cols:
-                    val1 = df1.loc[idx, col]
-                    val2 = df2.loc[idx, col]
-                    
-                    if pd.isna(val1) and pd.isna(val2):
-                        continue
-                    if str(val1) != str(val2):
-                        comparison_results["value_differences"].append({
-                            "row_id": idx,
-                            "column": col,
-                            "m7_value": val1,
-                            "singlestore_value": val2
-                        })
-        except Exception as e:
-            comparison_results["error"] = f"Comparison failed: {str(e)}"
-            logger.error(f"Error during DataFrame comparison: {str(e)}")
-        
+    if df1 is None or df2 is None:
+        comparison_results["error"] = "Comparison skipped due to missing data"
         return comparison_results
+    
+    cols1, cols2 = set(df1.columns), set(df2.columns)
+    if cols1 != cols2:
+        comparison_results["column_differences"] = {
+            "m7_only": list(cols1 - cols2),
+            "singlestore_only": list(cols2 - cols1)
+        }
+        common_cols = list(cols1 & cols2)
+        if not common_cols:
+            comparison_results["error"] = "No common columns for comparison"
+            logger.warning("No common columns between DataFrames")
+            return comparison_results
+        logger.warning(f"Column differences detected: {comparison_results['column_differences']}")
+    else:
+        common_cols = list(cols1)
+
+    # Check if ID columns exist
+    if m7_id_column not in df1.columns:
+        comparison_results["error"] = f"M7 ID column '{m7_id_column}' not found in M7 DataFrame"
+        logger.warning(f"M7 ID column '{m7_id_column}' not in M7 columns: {list(df1.columns)}")
+        return comparison_results
+    if singlestore_id_column not in df2.columns:
+        comparison_results["error"] = f"SingleStore ID column '{singlestore_id_column}' not found in SingleStore DataFrame"
+        logger.warning(f"SingleStore ID column '{singlestore_id_column}' not in SingleStore columns: {list(df2.columns)}")
+        return comparison_results
+
+    comparison_results["row_count_difference"] = {
+        "m7_rows": len(df1),
+        "singlestore_rows": len(df2)
+    }
+
+    try:
+        # Rename SingleStore ID column to match M7's for merging
+        df2_mapped = df2.rename(columns={singlestore_id_column: m7_id_column})
+        
+        # Merge DataFrames on the ID column to align rows
+        merged = df1.merge(df2_mapped, on=m7_id_column, how='outer', suffixes=('_m7', '_singlestore'), indicator=True)
+        
+        # Identify missing rows
+        m7_only = merged[merged['_merge'] == 'left_only'][m7_id_column].tolist()
+        singlestore_only = merged[merged['_merge'] == 'right_only'][m7_id_column].tolist()
+        
+        if m7_only:
+            comparison_results["missing_rows_singlestore"] = m7_only
+            logger.warning(f"Rows in M7 but not in SingleStore: {m7_only}")
+        if singlestore_only:
+            comparison_results["missing_rows_m7"] = singlestore_only
+            logger.warning(f"Rows in SingleStore but not in M7: {singlestore_only}")
+
+        # Compare values for common rows
+        common_rows = merged[merged['_merge'] == 'both']
+        for col in common_cols:
+            if col == m7_id_column:  # Skip the ID column itself
+                continue
+            m7_col = f"{col}_m7"
+            singlestore_col = f"{col}_singlestore"
+            if m7_col in common_rows.columns and singlestore_col in common_rows.columns:
+                differences = common_rows[common_rows[m7_col].astype(str) != common_rows[singlestore_col].astype(str)]
+                for _, row in differences.iterrows():
+                    comparison_results["value_differences"].append({
+                        "row_id": row[m7_id_column],
+                        "column": col,
+                        "m7_value": row[m7_col],
+                        "singlestore_value": row[singlestore_col]
+                    })
+
+    except Exception as e:
+        comparison_results["error"] = f"Comparison failed: {str(e)}"
+        logger.error(f"Error during DataFrame comparison: {str(e)}")
+        
+    return comparison_results
 
     def generate_html_report(self, results: Dict, m7_url: str, singlestore_url: str, m7_status: Dict, singlestore_status: Dict, index: int) -> str:
         """
@@ -380,31 +390,26 @@ class APIDataComparator:
         logger.info(f"HTML report generated at {report_path}")
         return report_path
 
-    def run_comparison(self) -> List[str]:
-        """
-        Run the comparison for all pairs of API endpoints.
+def run_comparison(self) -> List[str]:
+    """
+    Run the comparison for all pairs of API endpoints.
+    
+    Returns:
+        List of paths to generated HTML reports
+    """
+    report_paths = []
+    
+    for i, ((m7_url, m7_id_column), (singlestore_url, singlestore_id_column)) in enumerate(zip(self.m7_urls, self.singlestore_urls), 1):
+        logger.info(f"Comparing API pair {i}: M7={m7_url} (ID: {m7_id_column}), SingleStore={singlestore_url} (ID: {singlestore_id_column})")
+        m7_df, m7_status = self.fetch_api_data(m7_url)
+        singlestore_df, singlestore_status = self.fetch_api_data(singlestore_url)
         
-        Returns:
-            List of paths to generated HTML reports
-        """
-        report_paths = []
+        comparison_results = self.compare_dataframes(m7_df, singlestore_df, m7_id_column, singlestore_id_column)
         
-        for i, ((m7_url, m7_id_column), (singlestore_url, singlestore_id_column)) in enumerate(zip(self.m7_urls, self.singlestore_urls), 1):
-            logger.info(f"Comparing API pair {i}: M7={m7_url} (ID: {m7_id_column}), SingleStore={singlestore_url} (ID: {singlestore_id_column})")
-            m7_df, m7_status = self.fetch_api_data(m7_url)
-            singlestore_df, singlestore_status = self.fetch_api_data(singlestore_url)
-            
-            # Use the ID column from M7 (assuming they match; could validate if needed)
-            id_column = m7_id_column
-            if m7_id_column != singlestore_id_column:
-                logger.warning(f"ID columns differ: M7={m7_id_column}, SingleStore={singlestore_id_column}. Using M7's ID column.")
-            
-            comparison_results = self.compare_dataframes(m7_df, singlestore_df, id_column)
-            
-            report_path = self.generate_html_report(comparison_results, m7_url, singlestore_url, m7_status, singlestore_status, i)
-            report_paths.append(report_path)
-        
-        return report_paths
+        report_path = self.generate_html_report(comparison_results, m7_url, singlestore_url, m7_status, singlestore_status, i)
+        report_paths.append(report_path)
+    
+    return report_paths
 
 def main():
     # Minimal test example - uncomment to run standalone test
