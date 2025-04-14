@@ -24,8 +24,10 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
         logger.warning("One or both DataFrames are None")
         return comparison_results
     
-    logger.info(f"M7 columns: {list(df1.columns)}")
-    logger.info(f"SingleStore columns: {list(df2.columns)}")
+    logger.info(f"M7 columns: {list(df1.columns)}, shape: {df1.shape}")
+    logger.info(f"SingleStore columns: {list(df2.columns)}, shape: {df2.shape}")
+    logger.info(f"M7 sample (first 2 rows): {df1.head(2).to_dict()}")
+    logger.info(f"SingleStore sample (first 2 rows): {df2.head(2).to_dict()}")
 
     # Check if ID columns exist
     if m7_id_column not in df1.columns:
@@ -35,6 +37,16 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
     if singlestore_id_column not in df2.columns:
         comparison_results["error"] = f"SingleStore ID column '{singlestore_id_column}' not found"
         logger.warning(f"SingleStore ID column '{singlestore_id_column}' not in {list(df2.columns)}")
+        return comparison_results
+
+    # Check for nulls in ID columns
+    if df1[m7_id_column].isna().any():
+        comparison_results["error"] = f"M7 ID column '{m7_id_column}' contains null values"
+        logger.warning(f"Null values in M7 '{m7_id_column}'")
+        return comparison_results
+    if df2[singlestore_id_column].isna().any():
+        comparison_results["error"] = f"SingleStore ID column '{singlestore_id_column}' contains null values"
+        logger.warning(f"Null values in SingleStore '{singlestore_id_column}'")
         return comparison_results
 
     # Check SingleStore ID uniqueness
@@ -51,9 +63,10 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
 
     try:
         # Inner merge: SingleStore's ID (c1) to M7's ID (c2)
+        logger.info(f"Merging on SingleStore '{singlestore_id_column}' = M7 '{m7_id_column}'")
         merged = df2.merge(df1, left_on=singlestore_id_column, right_on=m7_id_column, how='inner', suffixes=('_singlestore', '_m7'))
         
-        logger.info(f"Merged columns: {list(merged.columns)}")
+        logger.info(f"Merged columns: {list(merged.columns)}, shape: {merged.shape}")
         
         # Log M7 duplicates
         if merged[m7_id_column].duplicated().any():
@@ -61,19 +74,22 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
             logger.info(f"M7 has {duplicate_count} duplicate IDs matched to SingleStore")
 
         # Compare non-ID columns (c3, c4)
-        common_cols = ['c3', 'c4']  # Since c1, c2 are IDs
+        common_cols = ['c3', 'c4']
         for col in common_cols:
             singlestore_col = f"{col}_singlestore"
             m7_col = f"{col}_m7"
-            if singlestore_col in merged.columns and m7_col in merged.columns:
-                differences = merged[merged[singlestore_col].astype(str) != merged[m7_col].astype(str)]
-                for _, row in differences.iterrows():
-                    comparison_results["value_differences"].append({
-                        "row_id": row[singlestore_id_column],
-                        "column": col,
-                        "m7_value": row[m7_col],
-                        "singlestore_value": row[singlestore_col]
-                    })
+            if singlestore_col not in merged.columns or m7_col not in merged.columns:
+                comparison_results["error"] = f"Column '{col}' missing in merged DataFrame"
+                logger.warning(f"Missing columns: {singlestore_col}, {m7_col}")
+                return comparison_results
+            differences = merged[merged[singlestore_col].astype(str) != merged[m7_col].astype(str)]
+            for _, row in differences.iterrows():
+                comparison_results["value_differences"].append({
+                    "row_id": row[singlestore_id_column],
+                    "column": col,
+                    "m7_value": row[m7_col],
+                    "singlestore_value": row[singlestore_col]
+                })
 
     except Exception as e:
         comparison_results["error"] = f"Comparison failed: {str(e)}"
