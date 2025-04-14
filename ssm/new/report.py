@@ -171,7 +171,7 @@ class APIDataComparator:
 def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column: str, singlestore_id_column: str) -> Dict:
     """
     Compare two DataFrames row by row and column by column using separate ID columns.
-    Assumes SingleStore ID is unique; compares all matching M7 records, ignoring unmatched.
+    Joins SingleStore ID to M7 ID; compares all matching M7 records, ignoring unmatched.
     
     Args:
         df1: First DataFrame (M7)
@@ -237,16 +237,16 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
     }
 
     try:
-        # Prepare SingleStore DataFrame: rename ID column and drop its original 'sm' to avoid overlap
-        df2_mapped = df2.rename(columns={singlestore_id_column: m7_id_column})
-        if m7_id_column != singlestore_id_column and m7_id_column in df2.columns:
-            logger.info(f"Dropping original '{m7_id_column}' column from SingleStore to avoid merge conflict")
-            df2_mapped = df2_mapped.drop(columns=[m7_id_column], errors='ignore')
+        # Drop SingleStore's 'sm' column if it exists and isn't the ID column
+        df2_cleaned = df2.copy()
+        if m7_id_column in df2_cleaned.columns and m7_id_column != singlestore_id_column:
+            logger.info(f"Dropping SingleStore's '{m7_id_column}' column to avoid merge conflict")
+            df2_cleaned = df2_cleaned.drop(columns=[m7_id_column])
+
+        logger.info(f"SingleStore columns after cleaning: {list(df2_cleaned.columns)}")
         
-        logger.info(f"SingleStore columns after mapping: {list(df2_mapped.columns)}")
-        
-        # Inner merge to keep only rows with matching IDs, preserving M7 duplicates
-        merged = df1.merge(df2_mapped, on=m7_id_column, how='inner', suffixes=('_m7', '_singlestore'))
+        # Inner merge using explicit left_on and right_on
+        merged = df2_cleaned.merge(df1, left_on=singlestore_id_column, right_on=m7_id_column, how='inner', suffixes=('_singlestore', '_m7'))
         
         logger.info(f"Merged columns: {list(merged.columns)}")
         
@@ -258,15 +258,15 @@ def compare_dataframes(self, df1: pd.DataFrame, df2: pd.DataFrame, m7_id_column:
 
         # Compare values for all matched rows
         for col in common_cols:
-            if col == m7_id_column:  # Skip the ID column itself
+            if col in (m7_id_column, singlestore_id_column):  # Skip ID columns
                 continue
-            m7_col = f"{col}_m7"
             singlestore_col = f"{col}_singlestore"
-            if m7_col in merged.columns and singlestore_col in merged.columns:
-                differences = merged[merged[m7_col].astype(str) != merged[singlestore_col].astype(str)]
+            m7_col = f"{col}_m7"
+            if singlestore_col in merged.columns and m7_col in merged.columns:
+                differences = merged[merged[singlestore_col].astype(str) != merged[m7_col].astype(str)]
                 for _, row in differences.iterrows():
                     comparison_results["value_differences"].append({
-                        "row_id": row[m7_id_column],
+                        "row_id": row[singlestore_id_column],  # Use SingleStore ID
                         "column": col,
                         "m7_value": row[m7_col],
                         "singlestore_value": row[singlestore_col]
