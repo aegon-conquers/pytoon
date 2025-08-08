@@ -16,7 +16,7 @@ def fetch_csv_from_api(url, headers=None):
         return None
 
 def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
-    """Compare two DataFrames and generate comparison statistics."""
+    """Compare two DataFrames and generate comparison statistics for matching primary keys."""
     # Initialize results dictionary
     results = {
         'row_count_comparison': {},
@@ -27,6 +27,20 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     # Filter out ignored primary keys
     df_m7 = df_m7[~df_m7[primary_key].isin(ignore_pks)].copy()
     df_ss = df_ss[~df_ss[primary_key].isin(ignore_pks)].copy()
+
+    # Find common primary keys
+    common_pks = set(df_m7[primary_key]).intersection(set(df_ss[primary_key]))
+    if not common_pks:
+        print("Error: No common primary keys found between DataFrames after filtering.")
+        return None
+
+    # Filter DataFrames to include only rows with common primary keys
+    df_m7 = df_m7[df_m7[primary_key].isin(common_pks)].copy()
+    df_ss = df_ss[df_ss[primary_key].isin(common_pks)].copy()
+
+    # Sort by primary key to ensure alignment
+    df_m7 = df_m7.sort_values(primary_key).reset_index(drop=True)
+    df_ss = df_ss.sort_values(primary_key).reset_index(drop=True)
 
     # 1. Row count comparison
     results['row_count_comparison'] = {
@@ -47,9 +61,9 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
         print(f"Error: Primary key '{primary_key}' not found in one or both DataFrames.")
         return None
 
-    # Ensure primary keys align
+    # Verify primary keys align after filtering
     if not df_m7[primary_key].equals(df_ss[primary_key]):
-        print("Error: Primary key values do not match between DataFrames after filtering.")
+        print("Error: Primary key values do not align after filtering.")
         return None
 
     # 2. Count mismatched values per attribute and collect 5 samples per attribute
