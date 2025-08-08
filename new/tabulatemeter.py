@@ -28,19 +28,27 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     df_m7 = df_m7[~df_m7[primary_key].isin(ignore_pks)].copy()
     df_ss = df_ss[~df_ss[primary_key].isin(ignore_pks)].copy()
 
-    # Find common primary keys
-    common_pks = set(df_m7[primary_key]).intersection(set(df_ss[primary_key]))
-    if not common_pks:
+    # Verify primary key exists
+    if primary_key not in df_m7.columns or primary_key not in df_ss.columns:
+        print(f"Error: Primary key '{primary_key}' not found in one or both DataFrames.")
+        return None
+
+    # Perform inner join on primary key to get matching rows
+    df_m7 = df_m7.set_index(primary_key)
+    df_ss = df_ss.set_index(primary_key)
+    common_pks = df_m7.index.intersection(df_ss.index)
+    if not common_pks.size:
         print("Error: No common primary keys found between DataFrames after filtering.")
         return None
 
-    # Filter DataFrames to include only rows with common primary keys
-    df_m7 = df_m7[df_m7[primary_key].isin(common_pks)].copy()
-    df_ss = df_ss[df_ss[primary_key].isin(common_pks)].copy()
+    # Filter to common primary keys
+    df_m7 = df_m7.loc[common_pks].reset_index()
+    df_ss = df_ss.loc[common_pks].reset_index()
 
-    # Sort by primary key to ensure alignment
-    df_m7 = df_m7.sort_values(primary_key).reset_index(drop=True)
-    df_ss = df_ss.sort_values(primary_key).reset_index(drop=True)
+    # Ensure primary keys are unique in both DataFrames
+    if df_m7[primary_key].duplicated().any() or df_ss[primary_key].duplicated().any():
+        print("Error: Duplicate primary keys found in one or both DataFrames.")
+        return None
 
     # 1. Row count comparison
     results['row_count_comparison'] = {
@@ -49,44 +57,27 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
         'match': len(df_m7) == len(df_ss)
     }
 
-    # Verify headers are identical
-    if list(df_m7.columns) != list(df_ss.columns):
-        print("Error: DataFrame headers do not match.")
-        print(f"M7 headers: {list(df_m7.columns)}")
-        print(f"SS headers: {list(df_ss.columns)}")
-        return None
-
-    # Verify primary key exists
-    if primary_key not in df_m7.columns or primary_key not in df_ss.columns:
-        print(f"Error: Primary key '{primary_key}' not found in one or both DataFrames.")
-        return None
-
-    # Verify primary keys align after filtering
-    if not df_m7[primary_key].equals(df_ss[primary_key]):
-        print("Error: Primary key values do not align after filtering.")
-        return None
-
     # 2. Count mismatched values per attribute and collect 5 samples per attribute
-    mismatch_counts = {}
-    mismatch_samples = {col: [] for col in df_m7.columns if col != primary_key and col not in ignore_attrs}
+    columns_to_compare = [col for col in df_m7.columns if col != primary_key and col not in ignore_attrs]
+    mismatch_counts = {col: 0 for col in columns_to_compare}
+    mismatch_samples = {col: [] for col in columns_to_compare}
     max_samples_per_attr = 5
 
-    for col in df_m7.columns:
-        if col != primary_key and col not in ignore_attrs:
-            mismatches = 0
-            for row in range(len(df_m7)):
-                val_m7 = df_m7[col].iloc[row]
-                val_ss = df_ss[col].iloc[row]
-                if str(val_m7) != str(val_ss) or (pd.isna(val_m7) != pd.isna(val_ss)):
-                    mismatches += 1
-                    if len(mismatch_samples[col]) < max_samples_per_attr:
-                        pk_value = df_m7[primary_key].iloc[row]
-                        mismatch_samples[col].append({
-                            'primary_key': pk_value,
-                            'm7_value': val_m7,
-                            'ss_value': val_ss
-                        })
-            mismatch_counts[col] = mismatches
+    # Iterate over rows using itertuples to avoid iloc
+    for row_m7, row_ss in zip(df_m7.itertuples(), df_ss.itertuples()):
+        for col in columns_to_compare:
+            val_m7 = getattr(row_m7, col)
+            val_ss = getattr(row_ss, col)
+            if str(val_m7) != str(val_ss) or (pd.isna(val_m7) != pd.isna(val_ss)):
+                mismatch_counts[col] += 1
+                if len(mismatch_samples[col]) < max_samples_per_attr:
+                    pk_value = getattr(row_m7, primary_key)
+                    mismatch_samples[col].append({
+                        'primary_key': pk_value,
+                        'm7_value': val_m7,
+                        'ss_value': val_ss
+                    })
+
     results['mismatch_counts'] = mismatch_counts
     results['mismatch_samples'] = mismatch_samples
 
