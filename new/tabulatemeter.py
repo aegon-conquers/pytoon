@@ -97,6 +97,15 @@ def print_report(results):
 
     print("=== DataFrame Comparison Report ===")
 
+    # 0. Duplicate primary keys observation
+    print("\n0. Duplicate Primary Keys:")
+    print("-" * 30)
+    print(f"{'DataFrame':<10} {'Duplicate Primary Keys':<20}")
+    print("-" * 30)
+    print(f"{'M7':<10} {', '.join(map(str, results['duplicate_pks']['m7_duplicates']) or 'None'):<20}")
+    print(f"{'SS':<10} {', '.join(map(str, results['duplicate_pks']['ss_duplicates']) or 'None'):<20}")
+    print("-" * 30)
+
     # 1. Row count comparison
     print("\n1. Row Count Comparison:")
     print("-" * 30)
@@ -107,20 +116,25 @@ def print_report(results):
           f"{'Yes' if results['row_count_comparison']['match'] else 'No':<10}")
     print("-" * 30)
 
-    # 2. Mismatch counts by attribute
+    # 2. Mismatch counts by attribute (only show attributes with mismatches)
     print("\n2. Mismatch Counts by Attribute:")
     print("-" * 30)
     print(f"{'Attribute':<15} {'Mismatch Count':<15}")
     print("-" * 30)
+    has_mismatches = False
     for attr, count in results['mismatch_counts'].items():
-        print(f"{attr:<15} {count:<15}")
+        if count > 0:  # Only print attributes with non-zero mismatches
+            print(f"{attr:<15} {count:<15}")
+            has_mismatches = True
+    if not has_mismatches:
+        print("No attributes with mismatches found.")
     print("-" * 30)
 
     # 3. Sample mismatches per attribute
     print("\n3. Sample Mismatches (up to 5 per attribute):")
     print("-" * 30)
     for attr, samples in results['mismatch_samples'].items():
-        if samples:  # Only print if there are mismatches for this attribute
+        if samples:
             print(f"\nAttribute: {attr}")
             for i, sample in enumerate(samples, 1):
                 print(f"Mismatch {i}:")
@@ -131,7 +145,6 @@ def print_report(results):
             print(f"\nAttribute: {attr}")
             print("No mismatches found.")
             print()
-
 # Example usage
 if __name__ == "__main__":
     # Sample API URLs (replace with actual URLs)
