@@ -21,7 +21,8 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     results = {
         'row_count_comparison': {},
         'mismatch_counts': {},
-        'mismatch_samples': {}  # Dictionary to store samples per attribute
+        'mismatch_samples': {},  # Dictionary to store samples per attribute
+        'duplicate_pks': {'m7_duplicates': [], 'ss_duplicates': []}  # Store duplicate primary keys
     }
 
     # Filter out ignored primary keys
@@ -32,6 +33,16 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     if primary_key not in df_m7.columns or primary_key not in df_ss.columns:
         print(f"Error: Primary key '{primary_key}' not found in one or both DataFrames.")
         return None
+
+    # Detect duplicate primary keys
+    m7_duplicates = df_m7[df_m7[primary_key].duplicated()][primary_key].tolist()
+    ss_duplicates = df_ss[df_ss[primary_key].duplicated()][primary_key].tolist()
+    results['duplicate_pks']['m7_duplicates'] = m7_duplicates
+    results['duplicate_pks']['ss_duplicates'] = ss_duplicates
+
+    # Filter out duplicate primary keys to keep only the first occurrence
+    df_m7 = df_m7.drop_duplicates(subset=primary_key, keep='first').copy()
+    df_ss = df_ss.drop_duplicates(subset=primary_key, keep='first').copy()
 
     # Perform inner join on primary key to get matching rows
     df_m7 = df_m7.set_index(primary_key)
@@ -44,11 +55,6 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     # Filter to common primary keys
     df_m7 = df_m7.loc[common_pks].reset_index()
     df_ss = df_ss.loc[common_pks].reset_index()
-
-    # Ensure primary keys are unique in both DataFrames
-    if df_m7[primary_key].duplicated().any() or df_ss[primary_key].duplicated().any():
-        print("Error: Duplicate primary keys found in one or both DataFrames.")
-        return None
 
     # 1. Row count comparison
     results['row_count_comparison'] = {
@@ -63,7 +69,7 @@ def compare_dataframes(df_m7, df_ss, primary_key, ignore_pks, ignore_attrs):
     mismatch_samples = {col: [] for col in columns_to_compare}
     max_samples_per_attr = 5
 
-    # Iterate over rows using itertuples to avoid iloc
+    # Iterate over rows using itertuples to avoid index-based access
     for row_m7, row_ss in zip(df_m7.itertuples(), df_ss.itertuples()):
         for col in columns_to_compare:
             val_m7 = getattr(row_m7, col)
