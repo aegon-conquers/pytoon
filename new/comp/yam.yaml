@@ -1,0 +1,15 @@
+base_m7_url: https://api.example-m7.com/
+base_ss_url: https://api.example-ss.com/
+endpoints:
+  - endpoint: data.csv
+    m7_url_keys: ['X_Y_Z_A1', 'A_BC_A2']
+    ss_url_keys: ['A1', 'A2']
+    primary_key: ['id', 'dept_id', 'loc_id']
+    ignore_pks: [{'id': 1, 'dept_id': 10, 'loc_id': 'Y'}]
+    ignore_attrs: ['notes']
+  - endpoint: records.csv
+    m7_url_keys: ['P_Q_R_B1']
+    ss_url_keys: ['B1']
+    primary_key: ['record_id']
+    ignore_pks: [{'record_id': 100}]
+    ignore_attrs: ['comments']
