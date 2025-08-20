@@ -1,0 +1,113 @@
+DataFrame Comparison ToolOverviewThe DataFrame Comparison Tool is a Python-based application designed to compare data fetched from two sets of API endpoints (M7 and SS) and generate detailed comparison reports. It fetches CSV data from multiple endpoints, compares DataFrames based on specified primary keys, and produces both console and HTML reports highlighting row counts, unique keys, duplicates, and mismatches. The tool is highly configurable, allowing users to define endpoints, URL keys, primary keys, and attributes to ignore via a YAML configuration file.Key features include:Flexible Configuration: Define API base URLs, endpoints, URL keys, primary keys, and ignore lists in a config.yaml file.
+Dynamic URL Construction: Builds API URLs using base URLs, URL keys, and endpoints (e.g., https://api.example-m7.com/X_Y_Z_A1/data.csv).
+Comprehensive Comparison: Compares DataFrames for row counts, unique primary keys, duplicates, and attribute mismatches, with configurable ignore lists.
+Detailed Reporting: Generates console and HTML reports with a "Row Counts by URL Key" table (Key | M7 Count | SS Count), using full M7 keys (e.g., X_Y_Z_A1) paired with SS keys (e.g., A1).
+Error Handling: Robust validation for configuration and API responses, with clear error messages.
+
+InstallationPrerequisitesPython 3.8 or higher
+Required Python packages:pandas for DataFrame operations
+requests for API calls
+PyYAML for parsing YAML configuration
+
+Install dependencies using:bash
+
+pip install pandas requests pyyaml
+
+Project Structure
+
+dataframe-comparator/
+├── config.yaml           # Configuration file for API endpoints and settings
+├── main.py               # Main script to run the comparison tool
+├── dataframe_comparator.py # Module with data fetching and comparison logic
+└── comparison_report_endpoint_*.html # Generated HTML reports
+
+ConfigurationThe tool uses a config.yaml file to define API endpoints and comparison settings. Each endpoint has its own configuration for URL keys, primary keys, and attributes to ignore.Sample config.yamlyaml
+
+base_m7_url: https://api.example-m7.com/
+base_ss_url: https://api.example-ss.com/
+endpoints:
+  - endpoint: data.csv
+    m7_url_keys: ['X_Y_Z_A1', 'A_BC_A2']
+    ss_url_keys: ['A1', 'A2']
+    primary_key: ['id', 'dept_id', 'loc_id']
+    ignore_pks: [{'id': 1, 'dept_id': 10, 'loc_id': 'Y'}]
+    ignore_attrs: ['notes']
+  - endpoint: records.csv
+    m7_url_keys: ['P_Q_R_B1']
+    ss_url_keys: ['B1']
+    primary_key: ['record_id']
+    ignore_pks: [{'record_id': 100}]
+    ignore_attrs: ['comments']
+
+Configuration Fieldsbase_m7_url: Base URL for M7 API (e.g., https://api.example-m7.com/).
+base_ss_url: Base URL for SS API (e.g., https://api.example-ss.com/).
+endpoints: List of endpoint configurations, each with:endpoint: API endpoint path (e.g., data.csv).
+m7_url_keys: List of M7 URL keys with prefixes (e.g., ['X_Y_Z_A1', 'A_BC_A2']).
+ss_url_keys: List of SS URL keys (e.g., ['A1', 'A2']).
+primary_key: List of primary key columns for comparison (e.g., ['id', 'dept_id', 'loc_id']).
+ignore_pks: List of dictionaries specifying primary key combinations to ignore (e.g., [{'id': 1, 'dept_id': 10, 'loc_id': 'Y'}]).
+ignore_attrs: List of attributes to exclude from comparison (e.g., ['notes']).
+
+URL ConstructionURLs are constructed as:M7: base_m7_url + m7_url_key + "/" + endpoint (e.g., https://api.example-m7.com/X_Y_Z_A1/data.csv).
+SS: base_ss_url + ss_url_key + "/" + endpoint (e.g., https://api.example-ss.com/A1/data.csv).
+
+UsagePrepare Configuration:Create or edit config.yaml in the project root.
+Specify base_m7_url, base_ss_url, and endpoints with appropriate settings.
+Ensure API endpoints are accessible and return CSV data.
+
+Run the Tool:bash
+
+python main.py
+
+Output:Console Report: Displays comparison results for each endpoint, including row counts, unique keys, duplicates, and mismatches.
+HTML Report: Generates one HTML file per endpoint (e.g., comparison_report_endpoint_1_data_csv.html) with formatted tables.
+
+Example Console Output
+
+=== Processing Endpoint 1: data.csv ===
+...
+1. Row Counts by URL Key:
+----------------------------------------
+Key                  M7 Count   SS Count  
+----------------------------------------
+X_Y_Z_A1            3          3         
+A_BC_A2             3          2         
+----------------------------------------
+2. Unique Primary Keys Not in Other DataFrame:
+------------------------------
+DataFrame   Unique Primary Keys            
+------------------------------
+M7         {'id': '5', 'dept_id': '50', 'loc_id': 'Z'}, {'id': '6', 'dept_id': '60', 'loc_id': 'W'}
+SS         {'id': '7', 'dept_id': '70', 'loc_id': 'X'}   
+------------------------------
+...
+
+Example HTML Output (Row Counts by URL Key)
+
+FeaturesData FetchingFetches CSV data from multiple API endpoints using requests.
+Combines data into a single DataFrame per source (M7 and SS).
+Tracks row counts per url_key for reporting.
+
+Comparison LogicPrimary Key Matching: Compares DataFrames based on specified primary keys (e.g., ['id', 'dept_id', 'loc_id']).
+Ignore Lists: Excludes specified primary key combinations (e.g., [{'id': 1, 'dept_id': 10, 'loc_id': 'Y'}]) and attributes (e.g., ['notes']) from comparison.
+Duplicate Detection: Identifies duplicate primary keys in each DataFrame.
+Mismatch Analysis: Counts and samples mismatches per attribute, excluding ignored attributes.
+
+ReportingConsole Report:Total rows fetched by API.
+Row counts by URL key (using m7_url_keys for the Key column, paired with ss_url_keys counts).
+Unique primary keys not in the other DataFrame.
+Duplicate primary keys.
+Row count comparison after filtering.
+Mismatch counts and sample mismatches per attribute.
+
+HTML Report:Formatted tables with CSS styling for readability.
+Separate report per endpoint, named comparison_report_endpoint_<index>_<endpoint>.html.
+
+Error HandlingValidates config.yaml for required fields.
+Handles API fetch errors, invalid CSV data, and missing primary key columns.
+Skips invalid endpoints and continues processing others.
+
+LimitationsCurrently supports only CSV endpoints. For JSON or other formats, modify fetch_csv_from_api in dataframe_comparator.py.
+Assumes m7_url_keys and ss_url_keys align by ID (e.g., X_Y_Z_A1 maps to A1). Custom mapping logic may be needed for complex key relationships.
+All primary key columns must exist in fetched DataFrames.
+
