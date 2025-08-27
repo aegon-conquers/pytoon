@@ -1,0 +1,2 @@
+REGEXP_REPLACE(A.col1, '^0+|0+$', '') = 
+   REGEXP_REPLACE(REGEXP_REPLACE(B.col1, '^0*(' || REGEXP_REPLACE(A.col1, '^0+|0+$', '') || '($|[^a-zA-Z0-9].*))', '$1'), '^0+|0+$', '')
