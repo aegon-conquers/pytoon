@@ -1,0 +1,69 @@
+**GenAI Roadmap: From Smart Copilots to AI‑Native AP Intelligence**
+
+## 1. Now – Experience Boosters & Developer Accelerators
+
+**AP Snapshot**  
+Delivers instant AP health overviews to sales, surfacing hidden anomalies and revenue opportunities in seconds.  
+Saves hours of manual analysis per file, accelerating client conversations by 2x.  
+*Leadership ask: Approve Vertex AI quota for immediate pilot on next 100 files.*
+
+**Explain This View**  
+Turns static dashboards into intelligent advisors explaining metric shifts with actionable context.  
+Increases user adoption 30% by making complex data instantly understandable.  
+*Leadership ask: Prioritize UI integration in next sprint for sales feedback loop.*
+
+**Sales Studio**  
+Transforms raw AP insights into client‑ready emails and talking points in one click.  
+Boosts sales productivity 25%, enabling reps to focus on relationship building.  
+*Leadership ask: Greenlight sales team beta access next month.*
+
+**Schema Scribe**  
+Auto‑generates living data documentation that stays synchronized with schema evolution.  
+Eliminates "where's that field definition?" delays, cutting support tickets 50%.  
+*Leadership ask: Allocate 1 dev-week for data catalog integration.*
+
+**Release Note Maker**  
+Converts technical changes into business‑friendly stakeholder communications automatically.  
+Reduces release communication overhead from days to minutes across teams.  
+*Leadership ask: Add to CI/CD pipeline as standard automation.*
+
+**PR Doctor**  
+AI‑powered pull request analysis generating merge descriptions, issue detection, and deployment notes.  
+Accelerates code review cycle 40% while maintaining documentation standards.  
+*Leadership ask: Enable GitHub Copilot Enterprise for dev team evaluation.*
+
+## 2. Next – AI‑Infused Workflows & Data Intelligence
+
+**Client Playbook Studio**  
+Dynamic per‑account strategy generator creating personalized sales playbooks from AP patterns.  
+Increases deal close rates 20% through hyper‑targeted account strategies.  
+*Leadership ask: Secure cross‑team alignment for account data access.*
+
+**Find My Data**  
+Semantic search across schemas and lineage via natural language queries.  
+Reduces data discovery from hours to seconds, unlocking analytics velocity.  
+*Leadership ask: Approve BigQuery vector search capacity upgrade.*
+
+**Pipeline Narrator**  
+Plain‑language explanation of complex data transformation flows and lineage.  
+Empowers business users to trust and leverage platform insights confidently.  
+*Leadership ask: Sponsor data governance working session Q2.*
+
+## 3. Future – AI‑Native Decisioning & Product Leadership
+
+**Next Best Move**  
+Predictive engine prioritizing client engagement sequence and value propositions.  
+Projects 15‑25% pipeline velocity improvement through intelligent prioritization.  
+*Leadership ask: Fund cross‑functional data science hiring for Q3.*
+
+**AP Co‑Pilot**  
+Embedded conversational intelligence enabling natural AP data interactions.  
+Transforms platform from dashboard to strategic decisioning companion.  
+*Leadership ask: Allocate product budget for customer‑facing AI roadmap.*
+
+**Strategy Canvas**  
+Automated executive storyboards for QBRs combining narrative, charts, recommendations.  
+Elevates platform positioning from tactical tool to strategic asset.  
+*Leadership ask: Prioritize executive demo for board review next quarter.*
+
+Sources
