@@ -1,0 +1,39 @@
+Great progress on the Hive → GCP migration (BigQuery + Dataproc + Airflow/Composer) — we're building something solid!To make sure the repo stays clean, maintainable and a pleasure to work with (especially as it grows), let's adopt these simple, high-value habits right now:Repo structure — let's keep things tidy and intuitive (example layout):
+
+project-root/
+├── dags/                    # Airflow DAGs, grouped by domain
+│   ├── finance/
+│   ├── marketing/
+│   └── shared/
+├── sql/                     # All .sql files — no long inline queries in DAGs
+│   ├── finance/staging/…
+│   ├── finance/transform/…
+│   └── finance/mart/…
+├── jobs/                    # Dataproc scripts (pyspark, etc.)
+├── include/                 # configs, macros, templates
+├── tests/                   # pytest + SQL tests
+├── scripts/                 # deployment, backfill, validation helpers
+├── docs/                    # architecture, runbooks
+├── .github/workflows/       # CI (lint, test, deploy)
+├── README.md
+└── requirements.txt
+
+Quick hygiene rules we’ll follow going forward:SQL in sql/ — reference files via sql/finance/…sql in operators
+Group by domain — easy to find things when we have 50+ DAGs
+Clear naming — staging/transform/mart, fct_/dim_ where it fits
+Remove commented-out / dead code — no old experiments or unused blocks in active files (archive elsewhere if truly needed)
+Add helpful comments — especially in .sql files: explain Hive → BigQuery changes, optimizations (e.g. UNNEST vs explode, MERGE instead of overwrite, partitioning wins), and why we made the choicesql
+
+-- Hive: explode + collect_list → slow on big arrays
+-- BQ: UNNEST + ARRAY_AGG → ~3× faster, cleaner
+SELECT user_id, ARRAY_AGG(DISTINCT cat) AS categories
+FROM …, UNNEST(categories) cat
+GROUP BY 1;
+
+Small, focused commits — easier reviews & rollbacks
+DAG docstrings — business purpose, owner, SLA, dependencies
+Use linters/CI — black, sqlfluff, DAG validation
+
+Building these habits now will save us tons of time later — and leave a repo future team members will appreciate.Thanks for the awesome work — let's keep the momentum and finish strong!
+Any questions or suggestions? Just drop them here.
+
