@@ -37,3 +37,14 @@ Use linters/CI — black, sqlfluff, DAG validation
 Building these habits now will save us tons of time later — and leave a repo future team members will appreciate.Thanks for the awesome work — let's keep the momentum and finish strong!
 Any questions or suggestions? Just drop them here.
 
+
+Regarding the two use case migrations currently in progress:One use case has been onboarded to a dedicated Cloud Composer environment.
+The other has been onboarded to a shared platform Cloud Composer environment.
+
+Could you please provide a brief explanation of the key differences between these two approaches in our specific context? In particular, I’d appreciate clarity on:Isolation, reliability, and impact of one use case on the other (e.g., failure points, resource contention, or performance implications)
+Cost implications (e.g., billing model, potential over/under-provisioning)
+Operational aspects (maintenance, upgrades, scaling, access control, and DAG management)
+Any security, compliance, or governance considerations
+Rationale for choosing dedicated for one use case and shared for the other
+
+
